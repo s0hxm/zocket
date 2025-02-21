@@ -1,0 +1,303 @@
+openapi: 3.0.0
+info:
+  title: Task Management System API
+  description: API for managing tasks and users in a task management system
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:8080/api/v1
+
+paths:
+  /auth/register:
+    post:
+      summary: Register a new user
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserRegistration'
+      responses:
+        '201':
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /auth/login:
+    post:
+      summary: Login user
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserLogin'
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthToken'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /tasks:
+    get:
+      summary: List all tasks for the authenticated user
+      tags:
+        - Tasks
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: List of tasks
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Task'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    
+    post:
+      summary: Create a new task
+      tags:
+        - Tasks
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskCreate'
+      responses:
+        '201':
+          description: Task created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /tasks/{taskId}:
+    get:
+      summary: Get a specific task
+      tags:
+        - Tasks
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: taskId
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Task details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    
+    put:
+      summary: Update a specific task
+      tags:
+        - Tasks
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: taskId
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskUpdate'
+      responses:
+        '200':
+          description: Task updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    
+    delete:
+      summary: Delete a specific task
+      tags:
+        - Tasks
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: taskId
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Task deleted successfully
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+components:
+  schemas:
+    UserRegistration:
+      type: object
+      required:
+        - name
+        - email
+        - password
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+
+    UserLogin:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    AuthToken:
+      type: object
+      properties:
+        token:
+          type: string
+
+    TaskCreate:
+      type: object
+      required:
+        - title
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+          enum: [TODO, IN_PROGRESS, DONE]
+
+    TaskUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+          enum: [TODO, IN_PROGRESS, DONE]
+
+    Task:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+          enum: [TODO, IN_PROGRESS, DONE]
+        userId:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    Error:
+      type: object
+      properties:
+        message:
+          type: string
